@@ -4,14 +4,25 @@ import { Subject, take, takeUntil } from 'rxjs';
 import { VisualizationNames } from '../models/reveal-dom/visualization-names';
 import { FileData } from '../models/reveal-dom/file-data';
 import { RevealDomService } from '../services/reveal-dom.service';
+import { RdashDocument, Theme } from '@revealbi/dom';
+import { RevealViewOptions, SavedEvent } from '@revealbi/ui';
 
 declare let $: any;
+
+interface VizInfo {
+  id: string;
+  dashboardId: string;
+  name?: string;
+  dashboardName: string; // New field to store the dashboard name
+  selected?: boolean;
+}
 
 @Component({
   selector: 'app-view1',
   templateUrl: './view1.component.html',
   styleUrls: ['./view1.component.scss']
 })
+
 export class View1Component implements OnInit, OnDestroy, AfterViewInit {
   private destroy$: Subject<void> = new Subject<void>();
 
@@ -24,13 +35,33 @@ export class View1Component implements OnInit, OnDestroy, AfterViewInit {
     this.revealDomVisualizationNames$.next();
   }
   public dashboardVisualizations?: VisualizationNames;
-  public visualizationId?: string;
   public revealDomFileData: FileData[] = [];
   public revealDomVisualizationNames: VisualizationNames[] = [];
   public revealDomVisualizationNames$: Subject<void> = new Subject<void>();
+  
+  public visualizationId?: string;
+  public visualizationName?: string;
+  public visualizationTitle?: string;
 
-  @ViewChild('revealDashBoard')
-  public revealDashBoard!: ElementRef;
+  dashboardDocument: RdashDocument | string | null = "";
+  availableViz: VizInfo[] = [];
+  vizCollection: VizInfo[] = [];
+  selectedViz?: VizInfo;
+
+  sourceDocs: Map<string, RdashDocument> = new Map();
+
+  @ViewChild('revealDashboard')
+  public revealDashboard!: ElementRef;
+
+  @ViewChild('revealDashboard1')
+  public revealDashboard1!: ElementRef;
+
+
+  options: RevealViewOptions = {
+    canSave: true,
+    canSaveAs: true,
+    saveOnServer: false
+  }
 
   constructor(
     private revealDomService: RevealDomService,
@@ -53,20 +84,9 @@ export class View1Component implements OnInit, OnDestroy, AfterViewInit {
   }
 
   public ngAfterViewInit() {
-    this.setRevealTheme();
-    $.ig.RevealSdkSettings.ensureFontsLoaded()
-      .then(() => {
-        $.ig.RevealSdkSettings.setBaseUrl("http://localhost:5111");
-
-        $.ig.RVDashboard.loadDashboard("Analysis", (dashboard: any) => {
-          const _revealDashBoard = new $.ig.RevealView(this.revealDashBoard.nativeElement);
-          _revealDashBoard.dashboard = dashboard;
-        });
-      })
-      .catch((err: any) => {
-        console.warn('An error occurred during Reveal setup.', err);
-      })
-;  }
+    //this.setRevealTheme();
+    $.ig.RevealSdkSettings.setBaseUrl("http://localhost:5111");
+  }
 
   private setRevealTheme() {
     const style = window.getComputedStyle(document.body);
@@ -90,10 +110,79 @@ export class View1Component implements OnInit, OnDestroy, AfterViewInit {
   }
 
   public singleSelectComboSelectionChanging(event: ISimpleComboSelectionChangingEventArgs) {
-    this.dashboardName = event.newSelection as string;
+    this.dashboardName = event.newSelection.name as string;
   }
 
   public listItemClick(item: VisualizationNames) {
     this.dashboardVisualizations = item as VisualizationNames;
+    this.visualizationId = item.id as string;
+    this.visualizationName = item.name as string;
+    this.visualizationTitle = item.title as string;
+
+    if (this.dashboardName && this.visualizationName) {
+      this.loadDashboardById(this.dashboardName, this.visualizationId);
+      this.selectedViz = {
+        id: this.visualizationId,
+        dashboardId: this.dashboardName,
+        name: this.visualizationName,
+        dashboardName: this.dashboardName
+      };
+      console.log("Viz Info Selected:", this.selectedViz);
+    } 
   }
+
+  private loadDashboardById(dashboardName: string, visualizationId: string) {
+    $.ig.RVDashboard.loadDashboard(dashboardName, (dashboard: any) => {
+      const _revealDashboard = new $.ig.RevealView(this.revealDashboard.nativeElement);
+      _revealDashboard.singleVisualizationMode=true;
+      _revealDashboard.showMenu=false;
+      _revealDashboard.dashboard = dashboard;
+      _revealDashboard.maximizedVisualization = dashboard.visualizations.getById(visualizationId);
+    });   
+  }
+
+  async generateDashboard() {
+    const document = new RdashDocument("Generated Dashboard");
+
+    for (const viz of this.vizCollection) {
+      let sourceDoc = this.sourceDocs.get(viz.dashboardId);      
+      
+      if (!sourceDoc) {
+        sourceDoc = await RdashDocument.load(viz.dashboardId);
+        this.sourceDocs.set(viz.dashboardId, sourceDoc);
+      }
+
+      if (sourceDoc) {
+        document.import(sourceDoc, viz.id);
+        console.log("Viz Id Added: " + viz.id);
+      }
+    }
+    this.dashboardDocument = document;
+  }
+
+  iconItemClick(item: VisualizationNames) {
+    this.dashboardVisualizations = item as VisualizationNames;
+    this.visualizationId = item.id as string;
+    this.visualizationName = item.name as string;
+    this.visualizationTitle = item.title as string;
+
+    if (this.dashboardName && this.visualizationName) {
+      this.selectedViz = {
+        id: this.visualizationId,
+        dashboardId: this.dashboardName,
+        name: this.visualizationName,
+        dashboardName: this.dashboardName
+      };
+      this.vizCollection.push(this.selectedViz);
+      this.generateDashboard();
+    } 
+
+  }
+
+  onSaved(args: SavedEvent) {
+    console.log(args);
+    console.log("handleSaved");
+    args.saveFinished();
+    }
+
 }

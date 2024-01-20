@@ -3,7 +3,7 @@
     <label igxLabel>Select Dashboard</label>
   </igx-simple-combo>
   <p class="ig-typography__body-2 content">
-    Select a visualziation to preview, and click the + button to add to your new chart.
+    Select a visualization to preview, and click the + button to add to your new chart.
   </p>
   <div class="row-layout group_1">
     <igx-list class="list">
@@ -14,14 +14,16 @@
         <span igxListLineTitle>{{ item.title }}</span>
         <span igxListLineSubTitle>{{ item.chartType }}</span>
         <span igxListAction>
-          <igx-icon class="icon">
-            star
+          <igx-icon class="icon" (click)="iconItemClick(item)">
+            add_circle
           </igx-icon>
         </span>
       </igx-list-item>
     </igx-list>
   </div>
-  <div #revealDashBoard class="reveal-dash-board"></div>
+  
+  <div #revealDashboard class="reveal-dash-board"></div>
+  
   <p class="ig-typography__overline text_1">
     {{ dashboardVisualizations?.id }}
   </p>
@@ -36,17 +38,18 @@
   </p>
 </div>
 <div class="column-layout group_2">
-  <h5 class="content">
+  <!-- <h5 class="content">
     New Dashboard
-  </h5>
+  </h5>-->
   <p class="content">
     Select a dashboard from the combobox to view its visualizations.  Click the '+' to the right of the visualization name to add it to the new dashboard.  
 
 To save your newly created dashboard, go into Edit mode on the dashboard, and change the name, and any other characteristics of the dashboard you'd like.
-  </p>
-  <div class="row-layout group_3">
-    <p class="text_2">
-      Add Dashboard Here
-    </p>
+  </p> 
+  <div class="row-layout group_3 reveal-dash-board1">
+    <reveal-view style="width: 100%;" 
+      [dashboard]="dashboardDocument">
+      (onSaved)="handleSaved($event)"
+    </reveal-view>
   </div>
 </div>

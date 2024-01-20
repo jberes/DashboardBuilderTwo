@@ -4,7 +4,9 @@ import { Observable } from 'rxjs';
 import { FileData } from '../models/reveal-dom/file-data';
 import { VisualizationNames } from '../models/reveal-dom/visualization-names';
 
-const API_ENDPOINT = 'http://localhost:5111';
+//const API_ENDPOINT = 'http://localhost:5111';
+const API_ENDPOINT = 'https://reveal-api.azurewebsites.net/';
+
 
 @Injectable({
   providedIn: 'root'

@@ -9,6 +9,7 @@ import { FormsModule } from '@angular/forms';
 import { View2Component } from './view2/view2.component';
 import { View3Component } from './view3/view3.component';
 import { HttpClientModule } from '@angular/common/http';
+import { RevealUIModule } from '@revealbi/ui-angular';
 
 @NgModule({
   declarations: [
@@ -18,6 +19,7 @@ import { HttpClientModule } from '@angular/common/http';
     View3Component
   ],
   imports: [
+    RevealUIModule,
     BrowserModule,
     HammerModule,
     AppRoutingModule,
