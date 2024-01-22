@@ -59,8 +59,6 @@ export class View1Component implements OnInit, OnDestroy {
   @ViewChild('revealDashboard')
   public revealDashboard!: ElementRef;
 
-  //public icon = new $.ig.RVImage("download.png", "download.png");
-  public  icon = new $.ig.RVImage("https://svgsilh.com/png-512/1088490.png", "Icon");
   options: RevealViewOptions = {
     canEdit: true,
     canSaveAs: true,   
