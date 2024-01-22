@@ -1,12 +1,12 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { Observable } from 'rxjs';
+import { Observable, of } from 'rxjs';
 import { FileData } from '../models/reveal-dom/file-data';
 import { VisualizationNames } from '../models/reveal-dom/visualization-names';
+import { environment } from 'src/environments/environment';
+import { RevealSdkSettings } from '@revealbi/ui';
 
-//const API_ENDPOINT = 'http://localhost:5111';
-const API_ENDPOINT = 'https://reveal-api.azurewebsites.net/';
-
+RevealSdkSettings.serverUrl = `${environment.BASE_URL}`;
 
 @Injectable({
   providedIn: 'root'
@@ -17,10 +17,13 @@ export class RevealDomService {
   ) { }
 
   public getFileDataList(): Observable<FileData[]> {
-    return this.http.get<FileData[]>(`${API_ENDPOINT}/dashboardnames`);
+    return this.http.get<FileData[]>(`${environment.BASE_URL}/dashboards?mode=1`);
   }
 
   public getVisualizationNamesList(name: string): Observable<VisualizationNames[]> {
-    return this.http.get<VisualizationNames[]>(`${API_ENDPOINT}/dashboards/${name}/visualizations`);
+    if (!name) {
+      return of([]);
+    }
+    return this.http.get<VisualizationNames[]>(`${environment.BASE_URL}/dashboards/${name}/visualizations`);
   }
 }

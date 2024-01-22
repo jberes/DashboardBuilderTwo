@@ -5,7 +5,8 @@ import { VisualizationNames } from '../models/reveal-dom/visualization-names';
 import { FileData } from '../models/reveal-dom/file-data';
 import { RevealDomService } from '../services/reveal-dom.service';
 import { RdashDocument, Theme } from '@revealbi/dom';
-import { RevealViewOptions, SavedEvent } from '@revealbi/ui';
+import { RevealSdkSettings, RevealViewOptions, SavedEvent } from '@revealbi/ui';
+import { environment } from 'src/environments/environment';
 
 declare let $: any;
 
@@ -13,7 +14,7 @@ interface VizInfo {
   id: string;
   dashboardId: string;
   name?: string;
-  dashboardName: string; // New field to store the dashboard name
+  dashboardName: string;
   selected?: boolean;
 }
 
@@ -30,10 +31,12 @@ export class View1Component implements OnInit, OnDestroy, AfterViewInit {
   public get dashboardName(): string | undefined {
     return this._dashboardName;
   }
+
   public set dashboardName(value: string | undefined) {
     this._dashboardName = value;
     this.revealDomVisualizationNames$.next();
   }
+  
   public dashboardVisualizations?: VisualizationNames;
   public revealDomFileData: FileData[] = [];
   public revealDomVisualizationNames: VisualizationNames[] = [];
@@ -53,15 +56,29 @@ export class View1Component implements OnInit, OnDestroy, AfterViewInit {
   @ViewChild('revealDashboard')
   public revealDashboard!: ElementRef;
 
-  @ViewChild('revealDashboard1')
-  public revealDashboard1!: ElementRef;
-
-
+  //public icon = new $.ig.RVImage("download.png", "download.png");
+  public  icon = new $.ig.RVImage("https://svgsilh.com/png-512/1088490.png", "Icon");
   options: RevealViewOptions = {
-    canSave: true,
-    canSaveAs: true,
-    saveOnServer: false
-  }
+    canEdit: true,
+    canSaveAs: true,   
+    startInEditMode: true, 
+    dataSourceDialog:
+    {
+      showExistingDataSources: true,
+    },
+    header: {
+      menu: {
+        exportToExcel: false,
+        exportToImage: false,
+        exportToPdf: false,
+        exportToPowerPoint: false,
+        refresh: false,
+        items: [        
+            { title: "Clear / New", click: () => this.resetDashboard(), icon: "https://users.infragistics.com/Reveal/Images/download.png" },
+          ]
+        }
+      }
+    }
 
   constructor(
     private revealDomService: RevealDomService,
@@ -72,10 +89,12 @@ export class View1Component implements OnInit, OnDestroy, AfterViewInit {
       next: (data) => this.revealDomFileData = data,
       error: (_err: any) => this.revealDomFileData = []
     });
+    
     this.revealDomService.getVisualizationNamesList(this.dashboardName as any).pipe(takeUntil(this.destroy$)).subscribe({
       next: (data) => this.revealDomVisualizationNames = data,
       error: (_err: any) => this.revealDomVisualizationNames = []
     });
+
     this.revealDomVisualizationNames$.pipe(takeUntil(this.destroy$)).subscribe(
       () => { this.revealDomService.getVisualizationNamesList(this.dashboardName as any).pipe(take(1)).subscribe({
         next: (data) => this.revealDomVisualizationNames = data,
@@ -83,11 +102,97 @@ export class View1Component implements OnInit, OnDestroy, AfterViewInit {
     })});
   }
 
-  public ngAfterViewInit() {
-    //this.setRevealTheme();
-    $.ig.RevealSdkSettings.setBaseUrl("http://localhost:5111");
+  resetDashboard() {
+    this.vizCollection = [];
+    this.dashboardDocument = null;
   }
 
+  public ngAfterViewInit() {
+    //this.setRevealTheme();
+    //$.ig.RevealSdkSettings.setBaseUrl("http://localhost:5111");
+  }
+
+  public onSaving(e: SavedEvent) {
+    console.log("in the save event");
+    console.log(e);
+  
+  //   if (e.saveAs) {
+  //     const newName = prompt("Please enter the dashboard name");
+  //     fetch(RevealSdkSettings.serverUrl + "/DashboardFile/" + newName)
+  //     .then(response => {
+  //         if (response.status === 200) { //dashboard already exists
+  //             if (!window.confirm("A dashboard with name: " + newName + " already exists. Do you want to override it?")) {
+  //                 return;
+  //             }
+  //         }          
+  //           e.dashboardId = e.name = newName!;
+  //           console.log("newName = " + newName);
+  //           console.log("e.dashboardId = " + e.dashboardId);
+  //           console.log("e.name) = " + e.name);
+  //           e.saveFinished();          
+  //     });
+  // } else {
+  //     e.saveFinished();
+  // }   
+
+
+    // if (args.saveAs) {
+    //   var newName = prompt("Please enter the dashboard name");
+    //   this.isDuplicateName(newName).then(isDuplicate => {
+  
+    //     if (newName !== null) {
+    //       args.serializeWithNewName(newName, bytes => {
+    //         this.saveDashboard(newName, bytes, true).then(() => {
+    //           args.saveFinished();
+    //         });
+    //       }, error => {
+    //       });
+    //     } 
+    //   });
+    // }
+    // else {
+    //   args.serialize(bytes => {
+    //     this.saveDashboard(args.name, bytes).then(() => {
+    //         args.saveFinished();
+    //     });
+    //   }, () => {   });
+    // }
+  }
+
+  private isDuplicateName(name: any) {
+    return fetch(`${environment.BASE_URL}/isduplicatename/${name}`).then(resp => resp.text());
+  }
+
+  private saveDashboard(name: string | null, bytes: any, isSaveAs = false) {
+      let url = `${environment.BASE_URL}/dashboards/${name}`;
+      let params = {
+          body: bytes,
+          method: "PUT"
+      }
+      if (isSaveAs) {
+          params.method = "POST"
+      }
+      return fetch(url, params);
+  }
+
+  private handleItemClick(item: VisualizationNames): void {
+    this.dashboardVisualizations = item;
+    this.visualizationId = item.id;
+    this.visualizationName = item.name;
+    this.visualizationTitle = item.title;
+
+    if (this.dashboardName && this.visualizationName) {
+      this.loadDashboardById(this.dashboardName, this.visualizationId);
+      this.selectedViz = {
+        id: this.visualizationId,
+        dashboardId: this.dashboardName,
+        name: this.visualizationName,
+        dashboardName: this.dashboardName
+      };
+      console.log("Viz Info Selected:", this.selectedViz);
+    } 
+  }
+  
   private setRevealTheme() {
     const style = window.getComputedStyle(document.body);
     const theme = new $.ig.RevealTheme();
@@ -113,24 +218,20 @@ export class View1Component implements OnInit, OnDestroy, AfterViewInit {
     this.dashboardName = event.newSelection.name as string;
   }
 
-  public listItemClick(item: VisualizationNames) {
-    this.dashboardVisualizations = item as VisualizationNames;
-    this.visualizationId = item.id as string;
-    this.visualizationName = item.name as string;
-    this.visualizationTitle = item.title as string;
-
-    if (this.dashboardName && this.visualizationName) {
-      this.loadDashboardById(this.dashboardName, this.visualizationId);
-      this.selectedViz = {
-        id: this.visualizationId,
-        dashboardId: this.dashboardName,
-        name: this.visualizationName,
-        dashboardName: this.dashboardName
-      };
-      console.log("Viz Info Selected:", this.selectedViz);
-    } 
+  public listItemClick(item: VisualizationNames): void {
+    this.handleItemClick(item);
   }
 
+  public iconItemClick(item: VisualizationNames): void {
+    this.handleItemClick(item);
+    if (this.selectedViz) {
+      this.vizCollection.push(this.selectedViz);
+      this.generateDashboard();
+    } else {
+      console.error('Selected visualization is undefined');
+    }
+  }
+  
   private loadDashboardById(dashboardName: string, visualizationId: string) {
     $.ig.RVDashboard.loadDashboard(dashboardName, (dashboard: any) => {
       const _revealDashboard = new $.ig.RevealView(this.revealDashboard.nativeElement);
@@ -141,48 +242,25 @@ export class View1Component implements OnInit, OnDestroy, AfterViewInit {
     });   
   }
 
-  async generateDashboard() {
+  private async generateDashboard(): Promise<void> {
+    console.log("Add Generated Dashboard");
     const document = new RdashDocument("Generated Dashboard");
-
     for (const viz of this.vizCollection) {
       let sourceDoc = this.sourceDocs.get(viz.dashboardId);      
-      
       if (!sourceDoc) {
-        sourceDoc = await RdashDocument.load(viz.dashboardId);
-        this.sourceDocs.set(viz.dashboardId, sourceDoc);
+        try {
+          sourceDoc = await RdashDocument.load(viz.dashboardId);
+          this.sourceDocs.set(viz.dashboardId, sourceDoc);
+        } catch (error) {
+          console.error(`Failed to load document: ${viz.dashboardId}`, error);
+          continue;
+        }
       }
-
       if (sourceDoc) {
         document.import(sourceDoc, viz.id);
-        console.log("Viz Id Added: " + viz.id);
+        console.log(`Viz Id Added: ${viz.id}`);
       }
     }
     this.dashboardDocument = document;
   }
-
-  iconItemClick(item: VisualizationNames) {
-    this.dashboardVisualizations = item as VisualizationNames;
-    this.visualizationId = item.id as string;
-    this.visualizationName = item.name as string;
-    this.visualizationTitle = item.title as string;
-
-    if (this.dashboardName && this.visualizationName) {
-      this.selectedViz = {
-        id: this.visualizationId,
-        dashboardId: this.dashboardName,
-        name: this.visualizationName,
-        dashboardName: this.dashboardName
-      };
-      this.vizCollection.push(this.selectedViz);
-      this.generateDashboard();
-    } 
-
-  }
-
-  onSaved(args: SavedEvent) {
-    console.log(args);
-    console.log("handleSaved");
-    args.saveFinished();
-    }
-
 }
