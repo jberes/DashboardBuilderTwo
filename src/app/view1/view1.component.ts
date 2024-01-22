@@ -27,6 +27,9 @@ interface VizInfo {
 export class View1Component implements OnInit, OnDestroy, AfterViewInit {
   private destroy$: Subject<void> = new Subject<void>();
 
+   _singleViz?: string;
+  _singleVizDocument?: string;
+
   private _dashboardName?: string;
   public get dashboardName(): string | undefined {
     return this._dashboardName;
@@ -233,13 +236,18 @@ export class View1Component implements OnInit, OnDestroy, AfterViewInit {
   }
   
   private loadDashboardById(dashboardName: string, visualizationId: string) {
-    $.ig.RVDashboard.loadDashboard(dashboardName, (dashboard: any) => {
+     $.ig.RVDashboard.loadDashboard(dashboardName, (dashboard: any) => {
+
+
+      // this._singleVizDocument = dashboard;
+      // this._singleViz = dashboard.visualizations.getById(visualizationId);
+
       const _revealDashboard = new $.ig.RevealView(this.revealDashboard.nativeElement);
       _revealDashboard.singleVisualizationMode=true;
       _revealDashboard.showMenu=false;
       _revealDashboard.dashboard = dashboard;
       _revealDashboard.maximizedVisualization = dashboard.visualizations.getById(visualizationId);
-    });   
+    });
   }
 
   private async generateDashboard(): Promise<void> {
