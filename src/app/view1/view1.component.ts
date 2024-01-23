@@ -1,4 +1,4 @@
-import { AfterViewInit, Component, ElementRef, OnDestroy, OnInit, ViewChild } from '@angular/core';
+import { Component, OnDestroy, OnInit, } from '@angular/core';
 import { ISimpleComboSelectionChangingEventArgs } from '@infragistics/igniteui-angular';
 import { Subject, switchMap, take, takeUntil } from 'rxjs';
 import { VisualizationNames } from '../models/reveal-dom/visualization-names';
@@ -7,8 +7,6 @@ import { RevealDomService } from '../services/reveal-dom.service';
 import { RdashDocument } from '@revealbi/dom';
 import { environment } from 'src/environments/environment';
 import { RevealViewOptions, SavedEventArgs } from '@revealbi/ui';
-
-declare let $: any;
 
 interface VizInfo {
   id: string;
@@ -27,7 +25,7 @@ interface VizInfo {
 export class View1Component implements OnInit, OnDestroy {
   private destroy$: Subject<void> = new Subject<void>();
 
-   _singleViz?: string;
+  _singleViz?: string;
   _singleVizDocument?: string;
 
   private _dashboardName?: string;
@@ -39,12 +37,12 @@ export class View1Component implements OnInit, OnDestroy {
     this._dashboardName = value;
     this.revealDomVisualizationNames$.next();
   }
-  
+
   public dashboardVisualizations?: VisualizationNames;
   public revealDomFileData: FileData[] = [];
   public revealDomVisualizationNames: VisualizationNames[] = [];
   public revealDomVisualizationNames$: Subject<void> = new Subject<void>();
-  
+
   public visualizationId?: string;
   public visualizationName?: string;
   public visualizationTitle?: string;
@@ -56,13 +54,10 @@ export class View1Component implements OnInit, OnDestroy {
 
   sourceDocs: Map<string, RdashDocument> = new Map();
 
-  @ViewChild('revealDashboard')
-  public revealDashboard!: ElementRef;
-
   options: RevealViewOptions = {
     canEdit: true,
-    canSaveAs: true,   
-    startInEditMode: true, 
+    canSaveAs: true,
+    startInEditMode: true,
     dataSourceDialog:
     {
       showExistingDataSources: true,
@@ -74,38 +69,56 @@ export class View1Component implements OnInit, OnDestroy {
         exportToPdf: false,
         exportToPowerPoint: false,
         refresh: false,
-        items: [        
-            { title: "Clear / New", click: () => this.resetDashboard(), icon: "https://users.infragistics.com/Reveal/Images/download.png" },
-          ]
-        }
+        items: [
+          { title: "Clear / New", click: () => this.resetDashboard(), icon: "https://users.infragistics.com/Reveal/Images/download.png" },
+        ]
       }
     }
+  }
 
   constructor(
     private revealDomService: RevealDomService,
-  ) {}
+  ) { }
 
   ngOnInit() {
-    this.loadData();
-    this.setupDashboardNameSubscription();
-  }
-
-  private loadData(): void {
+    // this.loadData();
+    // this.setupDashboardNameSubscription();
+  
+  
     this.revealDomService.getFileDataList().pipe(takeUntil(this.destroy$)).subscribe({
       next: (data) => this.revealDomFileData = data,
-      error: () => this.revealDomFileData = []
+      error: (_err: any) => this.revealDomFileData = []
     });
+    
+    this.revealDomService.getVisualizationNamesList(this.dashboardName as any).pipe(takeUntil(this.destroy$)).subscribe({
+      next: (data) => this.revealDomVisualizationNames = data,
+      error: (_err: any) => this.revealDomVisualizationNames = []
+    });
+
+    this.revealDomVisualizationNames$.pipe(takeUntil(this.destroy$)).subscribe(
+      () => { this.revealDomService.getVisualizationNamesList(this.dashboardName as any).pipe(take(1)).subscribe({
+        next: (data) => this.revealDomVisualizationNames = data,
+        error: (_err: any) => this.revealDomVisualizationNames = []
+    })});
+  
   }
 
-  private setupDashboardNameSubscription(): void {
-    this.revealDomVisualizationNames$.pipe(
-      takeUntil(this.destroy$),
-      switchMap(() => this.revealDomService.getVisualizationNamesList(this.dashboardName!))
-    ).subscribe({
-      next: (data) => this.revealDomVisualizationNames = data,
-      error: () => this.revealDomVisualizationNames = []
-    });
-  }
+  // private loadData(): void {
+  //   this.revealDomService.getFileDataList().pipe(takeUntil(this.destroy$)).subscribe({
+  //     next: (data) => this.revealDomFileData = data,
+  //     error: () => this.revealDomFileData = []
+  //   });
+  // }
+
+  // private setupDashboardNameSubscription(): void {
+  //   this.revealDomVisualizationNames$.pipe(
+  //     takeUntil(this.destroy$),
+  //     switchMap(() => this.revealDomService.getVisualizationNamesList(this.dashboardName!))
+  //   ).subscribe({
+  //     next: (data) => this.revealDomVisualizationNames = data,
+  //     error: () => this.revealDomVisualizationNames = []
+  //   });
+  // }
 
   resetDashboard() {
     this.vizCollection = [];
@@ -114,55 +127,60 @@ export class View1Component implements OnInit, OnDestroy {
 
   public onSaving(e: SavedEventArgs) {
     const isInvalidName = (name: string) => {
-        return name === "Generated Dashboard" || name === "New Dashboard";
+      return name === "Generated Dashboard" || name === "New Dashboard" || name === "";
     };
 
     if (e.saveAs || isInvalidName(e.dashboardId) || isInvalidName(e.name)) {
-        let newName: string | null;
+      let newName: string | null;
 
-        do {
-            newName = prompt("Please enter a valid dashboard name");
-            if (newName === null) { 
-                return; 
-            }
-        } while (isInvalidName(newName));
+      do {
+        newName = prompt("Please enter a valid dashboard name");
+        if (newName === null) {
+          return;
+        }
+      } while (isInvalidName(newName));
 
-        this.isDuplicateName(newName).then(isDuplicate => {
-            if (isDuplicate === 'true') {
-                if (!window.confirm("A dashboard with name: " + newName + " already exists. Do you want to override it?")) {
-                    return;
-                }
-            }
-
-            e.dashboardId = e.name = newName!;
-            e.saveFinished();
-        });
-    } else {
+      this.isDuplicateName(newName).then(isDuplicate => {
+        if (isDuplicate === 'true') {
+          if (!window.confirm("A dashboard with name: " + newName + " already exists. Do you want to override it?")) {
+            return;
+          }
+        }
+        e.dashboardId = e.name = newName!;
         e.saveFinished();
+      });
+    } else {
+      e.saveFinished();
     }
-}
-
-private isDuplicateName(name: string): Promise<string> {
-    return fetch(`${environment.BASE_URL}/isduplicatename/${name}`).then(resp => resp.text());
-}
-  private handleItemClick(item: VisualizationNames): void {
-    this.dashboardVisualizations = item;
-    this.visualizationId = item.id;
-    this.visualizationName = item.name;
-    this.visualizationTitle = item.title;
-
-    if (this.dashboardName && this.visualizationName) {
-      this.loadDashboardById(this.dashboardName, this.visualizationId);
-      this.selectedViz = {
-        id: this.visualizationId,
-        dashboardId: this.dashboardName,
-        name: this.visualizationName,
-        dashboardName: this.dashboardName
-      };
-      console.log("Viz Info Selected:", this.selectedViz);
-    } 
   }
-  
+
+  private isDuplicateName(name: string): Promise<string> {
+    return fetch(`${environment.BASE_URL}/isduplicatename/${name}`).then(resp => resp.text());
+  }
+
+  private prevSelected: any;
+
+  private handleItemClick(item: VisualizationNames): void {
+    if (this.prevSelected) {
+      this.prevSelected.selected = false;
+    }
+      item.selected = true;
+      this.prevSelected = item;
+      //this.cdr.detectChanges();
+
+    const { id, name, title } = item;
+    this.dashboardVisualizations = item;
+    this.visualizationId = id;
+    this.visualizationName = name;
+    this.visualizationTitle = title;
+
+    if (this.dashboardName && name) {
+      this.loadDashboardById(this.dashboardName, id);
+      this.selectedViz = { id, dashboardId: this.dashboardName, name, dashboardName: this.dashboardName };
+      console.log("Viz Info Selected:", this.selectedViz);
+    }
+  }
+
   ngOnDestroy() {
     this.destroy$.next();
     this.destroy$.complete();
@@ -186,7 +204,7 @@ private isDuplicateName(name: string): Promise<string> {
       console.error('Selected visualization is undefined');
     }
   }
-  
+
   private loadDashboardById(dashboardName: string, visualizationId: string) {
     this._singleVizDocument = dashboardName;
     this._singleViz = visualizationId;
@@ -196,7 +214,7 @@ private isDuplicateName(name: string): Promise<string> {
     console.log("Add Generated Dashboard");
     const document = new RdashDocument("Generated Dashboard");
     for (const viz of this.vizCollection) {
-      let sourceDoc = this.sourceDocs.get(viz.dashboardId);      
+      let sourceDoc = this.sourceDocs.get(viz.dashboardId);
       if (!sourceDoc) {
         try {
           sourceDoc = await RdashDocument.load(viz.dashboardId);
