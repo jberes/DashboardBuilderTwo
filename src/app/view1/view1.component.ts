@@ -4,9 +4,10 @@ import { Subject, take, takeUntil } from 'rxjs';
 import { VisualizationNames } from '../models/reveal-dom/visualization-names';
 import { FileData } from '../models/reveal-dom/file-data';
 import { RevealDomService } from '../services/reveal-dom.service';
-import { RdashDocument, Theme } from '@revealbi/dom';
-import { RevealSdkSettings, RevealViewOptions, SavedEvent } from '@revealbi/ui';
+import { RdashDocument } from '@revealbi/dom';
 import { environment } from 'src/environments/environment';
+import { RevealSdkSettings, RevealViewOptions } from '@revealbi/ui';
+import { SavedEventArgs } from '@revealbi/ui';
 
 declare let $: any;
 
@@ -109,28 +110,28 @@ export class View1Component implements OnInit, OnDestroy {
   }
 
 
-  public onSaving(e: SavedEvent) {
+  public onSaving(e: SavedEventArgs) {
     console.log("in the save event");
     console.log(e);
   
-  //   if (e.saveAs) {
-  //     const newName = prompt("Please enter the dashboard name");
-  //     fetch(RevealSdkSettings.serverUrl + "/DashboardFile/" + newName)
-  //     .then(response => {
-  //         if (response.status === 200) { //dashboard already exists
-  //             if (!window.confirm("A dashboard with name: " + newName + " already exists. Do you want to override it?")) {
-  //                 return;
-  //             }
-  //         }          
-  //           e.dashboardId = e.name = newName!;
-  //           console.log("newName = " + newName);
-  //           console.log("e.dashboardId = " + e.dashboardId);
-  //           console.log("e.name) = " + e.name);
-  //           e.saveFinished();          
-  //     });
-  // } else {
-  //     e.saveFinished();
-  // }   
+    if (e.saveAs) {
+      const newName = prompt("Please enter the dashboard name");
+      fetch(RevealSdkSettings.serverUrl + "/DashboardFile/" + newName)
+      .then(response => {
+          if (response.status === 200) { //dashboard already exists
+              if (!window.confirm("A dashboard with name: " + newName + " already exists. Do you want to override it?")) {
+                  return;
+              }
+          }          
+            e.dashboardId = e.name = newName!;
+            console.log("newName = " + newName);
+            console.log("e.dashboardId = " + e.dashboardId);
+            console.log("e.name) = " + e.name);
+            e.saveFinished();          
+      });
+  } else {
+      e.saveFinished();
+  }   
 
 
     // if (args.saveAs) {

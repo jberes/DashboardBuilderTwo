@@ -55,8 +55,8 @@ To save your newly created dashboard, go into Edit mode on the dashboard, and ch
     <reveal-view style="width: 100%;" 
       [options]="options"
       [dashboard]="dashboardDocument"
+      (saved)="onSaving($event)"
       >
     </reveal-view>
   </div>
 </div>
-<!-- (saved)="onSaving($event) -->
