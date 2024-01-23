@@ -22,12 +22,12 @@
     </igx-list>
   </div>
   
-  <div #revealDashboard class="reveal-dash-board"></div>
-  <!-- <visualization-viewer
+  <div  class="reveal-dash-board">
+ <visualization-viewer *ngIf="_singleVizDocument"
       [dashboard]="_singleVizDocument"
-      [visualization]="_singleViz"
-  ></visualization-viewer> -->
-
+      [visualization]="_singleViz">
+  </visualization-viewer>
+</div>
 
   <p class="ig-typography__overline text_1">
     {{ dashboardVisualizations?.id }}
