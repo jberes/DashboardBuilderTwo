@@ -125,34 +125,74 @@ export class View1Component implements OnInit, OnDestroy {
     this.dashboardDocument = null;
   }
 
+
+
   public onSaving(e: SavedEventArgs) {
     const isInvalidName = (name: string) => {
-      return name === "Generated Dashboard" || name === "New Dashboard" || name === "";
+        return name === "Generated Dashboard" || name === "New Dashboard" || name === "";
     };
 
-    if (e.saveAs || isInvalidName(e.dashboardId) || isInvalidName(e.name)) {
+    console.log("Dashboard Name: " + e.name);
+    console.log("Dashboard Id: " + e.dashboardId)
+
+    // Adjust the condition to check if the name is invalid and needs to be prompted for a new one.
+    // if (e.saveAs || isInvalidName(e.dashboardId) || isInvalidName(e.name)) {
+    //     let newName: string | null;
+
+    // Adjust the condition to check if the name is invalid and needs to be prompted for a new one.
+    if (e.saveAs || isInvalidName(e.name)) {
       let newName: string | null;
 
-      do {
-        newName = prompt("Please enter a valid dashboard name");
-        if (newName === null) {
-          return;
-        }
-      } while (isInvalidName(newName));
+        do {
+            newName = prompt("Please enter a valid dashboard name");
+            if (newName === null) {
+                return; // Exit if the user cancels the prompt.
+            }
+        } while (isInvalidName(newName)); // Keep asking while the new name is invalid.
 
-      this.isDuplicateName(newName).then(isDuplicate => {
-        if (isDuplicate === 'true') {
-          if (!window.confirm("A dashboard with name: " + newName + " already exists. Do you want to override it?")) {
-            return;
-          }
-        }
-        e.dashboardId = e.name = newName!;
-        e.saveFinished();
-      });
+        this.isDuplicateName(newName).then(isDuplicate => {
+            if (isDuplicate === 'true') {
+                if (!window.confirm("A dashboard with name: " + newName + " already exists. Do you want to override it?")) {
+                    return; // Exit if the user does not want to override.
+                }
+            }
+            e.dashboardId = e.name = newName!;
+            e.saveFinished();
+        });
     } else {
-      e.saveFinished();
+        e.saveFinished(); // Save without prompting if the initial name is valid and not a duplicate.
     }
-  }
+}
+
+
+  // public onSaving(e: SavedEventArgs) {
+  //   const isInvalidName = (name: string) => {
+  //     return name === "Generated Dashboard" || name === "New Dashboard" || name === "";
+  //   };
+
+  //   if (e.saveAs || !isInvalidName(e.dashboardId) || !isInvalidName(e.name)) {
+  //     let newName: string | null;
+
+  //     do {
+  //       newName = prompt("Please enter a valid dashboard name");
+  //       if (newName === null) {
+  //         return;
+  //       }
+  //     } while (isInvalidName(newName));
+
+  //     this.isDuplicateName(newName).then(isDuplicate => {
+  //       if (isDuplicate === 'true') {
+  //         if (!window.confirm("A dashboard with name: " + newName + " already exists. Do you want to override it?")) {
+  //           return;
+  //         }
+  //       }
+  //       e.dashboardId = e.name = newName!;
+  //       e.saveFinished();
+  //     });
+  //   } else {
+  //     e.saveFinished();
+  //   }
+  // }
 
   private isDuplicateName(name: string): Promise<string> {
     return fetch(`${environment.BASE_URL}/isduplicatename/${name}`).then(resp => resp.text());
