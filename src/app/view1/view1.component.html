@@ -1,7 +1,10 @@
 <div class="column-layout group">
-  <igx-simple-combo type="border" [data]="revealDomFileData" valueKey="name" displayKey="name" (selectionChanging)="singleSelectComboSelectionChanging($event)" class="single-select-combo">
+  
+  <igx-simple-combo type="border" [data]="revealDomFileData" valueKey="name" displayKey="name" 
+        (selectionChanging)="singleSelectComboSelectionChanging($event)" class="single-select-combo">
     <label igxLabel>Select Dashboard</label>
   </igx-simple-combo>
+  
   <p class="ig-typography__body-2 content">
     Select a visualization to preview, and click the + button to add to your new chart.
   </p>
@@ -33,7 +36,7 @@
   </visualization-viewer>
 </div>
 
-  <p class="ig-typography__overline text_1">
+  <!-- <p class="ig-typography__overline text_1">
     {{ dashboardVisualizations?.id }}
   </p>
   <p class="ig-typography__overline text_2">
@@ -44,12 +47,9 @@
   </p>
   <p class="ig-typography__overline text_2">
     {{ dashboardVisualizations?.chartType }}
-  </p>
+  </p> -->
 </div>
 <div class="column-layout group_2">
-  <!-- <h5 class="content">
-    New Dashboard
-  </h5>-->
   <p class="content">
     Select a dashboard from the combobox to view its visualizations.  Click the '+' to the right of the visualization name to add it to the new dashboard.  
 

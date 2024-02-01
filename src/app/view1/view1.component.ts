@@ -1,5 +1,5 @@
-import { Component, OnDestroy, OnInit, } from '@angular/core';
-import { ISimpleComboSelectionChangingEventArgs } from '@infragistics/igniteui-angular';
+import { Component, OnDestroy, OnInit, ViewChild, } from '@angular/core';
+import { ISimpleComboSelectionChangingEventArgs, IgxListComponent, IgxSimpleComboComponent } from '@infragistics/igniteui-angular';
 import { Subject, switchMap, take, takeUntil } from 'rxjs';
 import { VisualizationNames } from '../models/reveal-dom/visualization-names';
 import { FileData } from '../models/reveal-dom/file-data';
@@ -24,6 +24,12 @@ interface VizInfo {
 
 export class View1Component implements OnInit, OnDestroy {
   private destroy$: Subject<void> = new Subject<void>();
+
+  @ViewChild(IgxSimpleComboComponent, {read: IgxSimpleComboComponent, static: true})
+  public simpleCombo: IgxSimpleComboComponent | undefined;
+
+  @ViewChild(IgxListComponent, {read: IgxListComponent, static: true})
+  public simpleList: IgxListComponent | undefined;
 
   _singleViz?: string;
   _singleVizDocument?: string;
@@ -81,51 +87,50 @@ export class View1Component implements OnInit, OnDestroy {
   ) { }
 
   ngOnInit() {
-    // this.loadData();
-    // this.setupDashboardNameSubscription();
-  
-  
     this.revealDomService.getFileDataList().pipe(takeUntil(this.destroy$)).subscribe({
-      next: (data) => this.revealDomFileData = data,
+      next: (data) => {
+        this.revealDomFileData = data;
+        if (this.revealDomFileData.length > 0) {
+          this.selectFirstItem();
+        }
+      },
       error: (_err: any) => this.revealDomFileData = []
-    });
-    
-    this.revealDomService.getVisualizationNamesList(this.dashboardName as any).pipe(takeUntil(this.destroy$)).subscribe({
-      next: (data) => this.revealDomVisualizationNames = data,
-      error: (_err: any) => this.revealDomVisualizationNames = []
     });
 
     this.revealDomVisualizationNames$.pipe(takeUntil(this.destroy$)).subscribe(
       () => { this.revealDomService.getVisualizationNamesList(this.dashboardName as any).pipe(take(1)).subscribe({
-        next: (data) => this.revealDomVisualizationNames = data,
+        next: (data) => this.revealDomVisualizationNames = data,        
         error: (_err: any) => this.revealDomVisualizationNames = []
     })});
-  
   }
 
-  // private loadData(): void {
-  //   this.revealDomService.getFileDataList().pipe(takeUntil(this.destroy$)).subscribe({
-  //     next: (data) => this.revealDomFileData = data,
-  //     error: () => this.revealDomFileData = []
-  //   });
-  // }
+  private selectFirstVisualization(): void {
+    if (this.revealDomVisualizationNames && this.revealDomVisualizationNames.length > 0) {
+      // Trigger the item click event for the first visualization
+      this.handleItemClick(this.revealDomVisualizationNames[0]);
+    }
+  }
+  
+  private selectFirstItem(): void {
+    this.dashboardName = this.revealDomFileData[0].name;
+    this.simpleCombo?.select( this.dashboardName);
+    this.loadRelatedData(this.dashboardName);
+  }
 
-  // private setupDashboardNameSubscription(): void {
-  //   this.revealDomVisualizationNames$.pipe(
-  //     takeUntil(this.destroy$),
-  //     switchMap(() => this.revealDomService.getVisualizationNamesList(this.dashboardName!))
-  //   ).subscribe({
-  //     next: (data) => this.revealDomVisualizationNames = data,
-  //     error: () => this.revealDomVisualizationNames = []
-  //   });
-  // }
-
+  private loadRelatedData(dashboardName: string): void {
+    this.revealDomService.getVisualizationNamesList(this.dashboardName as any).pipe(takeUntil(this.destroy$)).subscribe({
+      next: (data) => {
+        this.revealDomVisualizationNames = data;
+        this.selectFirstVisualization();
+      },
+      error: (_err: any) => this.revealDomVisualizationNames = []
+    });
+  }
+  
   resetDashboard() {
     this.vizCollection = [];
     this.dashboardDocument = null;
   }
-
-
 
   public onSaving(e: SavedEventArgs) {
     const isInvalidName = (name: string) => {
@@ -135,64 +140,29 @@ export class View1Component implements OnInit, OnDestroy {
     console.log("Dashboard Name: " + e.name);
     console.log("Dashboard Id: " + e.dashboardId)
 
-    // Adjust the condition to check if the name is invalid and needs to be prompted for a new one.
-    // if (e.saveAs || isInvalidName(e.dashboardId) || isInvalidName(e.name)) {
-    //     let newName: string | null;
-
-    // Adjust the condition to check if the name is invalid and needs to be prompted for a new one.
     if (e.saveAs || isInvalidName(e.name)) {
       let newName: string | null;
 
         do {
             newName = prompt("Please enter a valid dashboard name");
             if (newName === null) {
-                return; // Exit if the user cancels the prompt.
+                return; 
             }
-        } while (isInvalidName(newName)); // Keep asking while the new name is invalid.
+        } while (isInvalidName(newName)); 
 
         this.isDuplicateName(newName).then(isDuplicate => {
             if (isDuplicate === 'true') {
                 if (!window.confirm("A dashboard with name: " + newName + " already exists. Do you want to override it?")) {
-                    return; // Exit if the user does not want to override.
+                    return; 
                 }
             }
             e.dashboardId = e.name = newName!;
             e.saveFinished();
         });
     } else {
-        e.saveFinished(); // Save without prompting if the initial name is valid and not a duplicate.
+        e.saveFinished(); 
     }
 }
-
-
-  // public onSaving(e: SavedEventArgs) {
-  //   const isInvalidName = (name: string) => {
-  //     return name === "Generated Dashboard" || name === "New Dashboard" || name === "";
-  //   };
-
-  //   if (e.saveAs || !isInvalidName(e.dashboardId) || !isInvalidName(e.name)) {
-  //     let newName: string | null;
-
-  //     do {
-  //       newName = prompt("Please enter a valid dashboard name");
-  //       if (newName === null) {
-  //         return;
-  //       }
-  //     } while (isInvalidName(newName));
-
-  //     this.isDuplicateName(newName).then(isDuplicate => {
-  //       if (isDuplicate === 'true') {
-  //         if (!window.confirm("A dashboard with name: " + newName + " already exists. Do you want to override it?")) {
-  //           return;
-  //         }
-  //       }
-  //       e.dashboardId = e.name = newName!;
-  //       e.saveFinished();
-  //     });
-  //   } else {
-  //     e.saveFinished();
-  //   }
-  // }
 
   private isDuplicateName(name: string): Promise<string> {
     return fetch(`${environment.BASE_URL}/isduplicatename/${name}`).then(resp => resp.text());
@@ -206,7 +176,6 @@ export class View1Component implements OnInit, OnDestroy {
     }
       item.selected = true;
       this.prevSelected = item;
-      //this.cdr.detectChanges();
 
     const { id, name, title } = item;
     this.dashboardVisualizations = item;

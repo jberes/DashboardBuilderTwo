@@ -1,0 +1,49 @@
+<div class="column-layout group">
+    <!-- <igx-simple-combo type="border" [data]="revealDomFileData" valueKey="name" displayKey="name" (selectionChanging)="singleSelectComboSelectionChanging($event)" class="single-select-combo">
+      <label igxLabel>Select Dashboard</label>
+    </igx-simple-combo> -->
+    <p class="ig-typography__body-2 content">
+      Select a visualization to preview, and click the + button to add to your new chart.
+    </p>
+    <div class="row-layout group_1">
+      <igx-list class="list">
+        <igx-list-item [isHeader]="false" *ngFor="let item of revealDomVisualizationDetails" (click)="listItemClick(item)"
+          [ngClass]="item.selected ? 'selected' : ''" #item
+          igxRipple igxRippleTarget=".igx-list__item-content" >
+            <span igxListThumbnail>
+                <igx-avatar [src]="item.vizImageUrl" shape="circle" class="avatar"></igx-avatar>
+            </span>
+            <span igxListLineTitle>{{ item.vizTitle }}</span>
+            <span igxListLineSubTitle>From Dashboard: {{ item.dashboardTitle.length > 30 ? (item.dashboardTitle | slice:0:30) + '...' : item.dashboardTitle }}</span>
+            <span igxListAction>
+                <igx-icon class="icon" (click)="iconItemClick(item)">
+                    add_photo_alternate
+                </igx-icon>
+            </span>
+        </igx-list-item>
+      </igx-list>
+    </div>
+    
+    <div  class="reveal-dash-board">
+     <visualization-viewer *ngIf="_singleVizDocument"
+      [dashboard]="_singleVizDocument"
+      [visualization]="_singleViz">
+    </visualization-viewer>
+   
+  </div>
+  
+  </div>
+  <div class="column-layout group_2">
+    <p class="content">
+      Select a dashboard from the combobox to view its visualizations.  Click the '+' to the right of the visualization name to add it to the new dashboard.    
+  To save your newly created dashboard, go into Edit mode on the dashboard, and change the name, and any other characteristics of the dashboard you'd like.
+    </p> 
+    <div class="row-layout group_3 reveal-dash-board1">
+      <reveal-view style="width: 100%;" 
+        [options]="options"
+        [dashboard]="dashboardDocument"
+        (saved)="onSaving($event)"
+        >
+      </reveal-view>
+    </div>
+  </div>

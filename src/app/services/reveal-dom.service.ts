@@ -2,7 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable, of } from 'rxjs';
 import { FileData } from '../models/reveal-dom/file-data';
-import { VisualizationNames } from '../models/reveal-dom/visualization-names';
+import { VisualizationDetails, VisualizationNames } from '../models/reveal-dom/visualization-names';
 import { environment } from 'src/environments/environment';
 import { RevealSdkSettings } from '@revealbi/ui';
 
@@ -26,4 +26,9 @@ export class RevealDomService {
     }
     return this.http.get<VisualizationNames[]>(`${environment.BASE_URL}/dashboards/${name}/visualizations`);
   }
+
+  public getVisualizationsList(): Observable<VisualizationDetails[]> {
+    return this.http.get<VisualizationDetails[]>(`${environment.BASE_URL}/dashboards/visualizations/all`);
+  }
+
 }
