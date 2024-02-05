@@ -10,6 +10,7 @@
   </p>
   <div class="row-layout group_1">
     <igx-list class="list">
+     
       <igx-list-item [isHeader]="false" *ngFor="let item of revealDomVisualizationNames" (click)="listItemClick(item)"
         [ngClass]="item.selected ? 'selected' : ''" #item
         igxRipple

@@ -106,9 +106,6 @@ export class View2Component  implements OnInit, OnDestroy {
   }
 
 
-
-  
-
   resetDashboard() {
     this.vizCollection = [];
     this.dashboardDocument = null;
